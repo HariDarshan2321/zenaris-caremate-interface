@@ -26,6 +26,13 @@ interface StepWizardProps {
   showExport: boolean;
 }
 
+const initialPreferences: MealPreferences = {
+  favoriteFoods: [],
+  dislikedFoods: [],
+  allergiesIntolerances: [],
+  additionalConsiderations: '',
+};
+
 const steps = [
   {
     id: 'welcome',
@@ -74,6 +81,7 @@ const steps = [
 export const StepWizard: React.FC<StepWizardProps> = ({ preferences, onUpdate, onExport, showExport }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showStartOverModal, setShowStartOverModal] = useState(false);
 
   const handleSuggestionSelect = (suggestion: string, type: 'favorite' | 'dislike' | 'allergy') => {
     if (type === 'favorite') {
@@ -111,6 +119,21 @@ export const StepWizard: React.FC<StepWizardProps> = ({ preferences, onUpdate, o
 
   const goToStep = (stepIndex: number) => {
     setCurrentStep(stepIndex);
+  };
+
+  const handleStartOver = () => {
+    setShowStartOverModal(true);
+  };
+
+  const confirmStartOver = () => {
+    onUpdate(initialPreferences);
+    setCurrentStep(0);
+    setShowSuggestions(false);
+    setShowStartOverModal(false);
+  };
+
+  const cancelStartOver = () => {
+    setShowStartOverModal(false);
   };
 
   const getTotalItems = () => {
@@ -393,9 +416,20 @@ export const StepWizard: React.FC<StepWizardProps> = ({ preferences, onUpdate, o
                 <p className="text-xs text-blue-600">Step {currentStep + 1} of {steps.length}</p>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">{getStepProgress()}% complete</div>
-              <div className="text-xs text-gray-500">{getTotalItems()} items added</div>
+            <div className="text-right flex items-center gap-3">
+              <div>
+                <div className="text-sm font-medium text-gray-900">{getStepProgress()}% complete</div>
+                <div className="text-xs text-gray-500">{getTotalItems()} items added</div>
+              </div>
+              {getTotalItems() > 0 && (
+                <button
+                  onClick={handleStartOver}
+                  className="text-xs text-gray-500 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                  title="Clear all progress and start over"
+                >
+                  Start Over
+                </button>
+              )}
             </div>
           </div>
 
@@ -468,6 +502,78 @@ export const StepWizard: React.FC<StepWizardProps> = ({ preferences, onUpdate, o
           </div>
         </div>
       </div>
+
+      {/* Start Over Confirmation Modal */}
+      {showStartOverModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Start Over?</h3>
+                  <p className="text-sm text-gray-600">This will clear all your progress</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-gray-700 mb-4">
+                  Are you sure you want to start over? This will permanently delete:
+                </p>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  {preferences.favoriteFoods.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-green-500">💚</span>
+                      <span>{preferences.favoriteFoods.length} favorite food{preferences.favoriteFoods.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {preferences.dislikedFoods.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-yellow-500">⚠️</span>
+                      <span>{preferences.dislikedFoods.length} food{preferences.dislikedFoods.length !== 1 ? 's' : ''} to avoid</span>
+                    </div>
+                  )}
+                  {preferences.allergiesIntolerances.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-red-500">🚨</span>
+                      <span>{preferences.allergiesIntolerances.length} medical restriction{preferences.allergiesIntolerances.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {preferences.additionalConsiderations.trim() && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="text-purple-500">📝</span>
+                      <span>Special notes and considerations</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelStartOver}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+                >
+                  Keep My Progress
+                </button>
+                <button
+                  onClick={confirmStartOver}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium rounded-xl transition-all duration-200"
+                >
+                  Yes, Start Over
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center mt-3">
+                You can always come back and add information later
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
